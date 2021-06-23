@@ -66,7 +66,9 @@ data = read_csv("DATA.csv")
 
 # EDA for Business Insight
 
-## Treemap from Top 20 Countries with Most Respondents
+## Country
+
+### Treemap from Top 20 Countries with Most Respondents
 
 - Top 5 countries are US, India, Germany, UK, and Canada in sequence
 
@@ -95,7 +97,7 @@ ggplot(data = top.countries,
        y = NULL)
 ```
 
-## Amount and Percent of Respondents
+### Amount and Percent of Respondents
 
 - US (21%), India(14%), Germany(7%), UK (6%), Canada (3%)
 - Top 5 countries represent 51% for over half of them
@@ -118,7 +120,9 @@ ggplot(data = top.countries,
        y = NULL)
 ```
 
-## Undergrad Majors with NAs
+## Major
+
+### Undergrad Majors with NAs
 
 - NA's is covered 20% of the undergrad majors
 
@@ -151,7 +155,7 @@ ggplot(data = major.withna,
        y = "Total Share (%)")
 ```
 
-## Undergrad Majors without NAs
+### Undergrad Majors without NAs
 
 - Top 3 undergrad majors are computer science, other engineer disciplines, information systems
 
@@ -186,7 +190,9 @@ ggplot(data = major.withoutna,
        y = "Total Share (%)")
 ```
 
-## Distribution by Gender in Salary Sections
+## Gender
+
+### Distribution by Gender in Salary Sections
 
 ...
 
@@ -223,7 +229,7 @@ ggplot(data = box.gender,
        y = "Salary")
 ```
 
-## Formal Education by Gender
+### Formal Education by Gender
 
 ...
 
@@ -253,7 +259,7 @@ ggplot(data = edu.gender,
        y = "Percent")
 ```
 
-## Genders Group by Hobby
+### Genders Group by Hobby
 
 ...
 
@@ -283,9 +289,9 @@ ggplot(data = hob.gender,
   # theme(legend.position = "right") +
   labs(title = "Genders Group by Hobby",
        x = "Codes as a Hobby",
-       y = "Percent")  
+       y = "Percent")
 ```
-## Student Status by Gender
+### Student Status by Gender
 
 ...
 
@@ -313,10 +319,10 @@ ggplot(data = stu.gender,
   theme +
   labs(title = "Student Status by Gender",
        x = "Student Status",
-       y = "Percent")  
+       y = "Percent")
 ```
 
-## Age by Gender
+### Age by Gender
 
 ...
 
@@ -342,16 +348,36 @@ ggplot(data = age.gender,
   theme(legend.position = "right") +
   labs(title = "Age by Gender",
        x = NULL,
-       y = "Percent")  
+       y = "Percent")
 ```
 
-## Last Job by Gender
+### Last Job by Gender
 
 ...
 
 ```{r, fig.width = 8, fig.height = 5}
 # data
+job.gender = data %>%
+  filter(Gender == "Male" | Gender == "Female") %>% 
+  filter(!is.na(LastNewJob)) %>% 
+  group_by(Gender, LastNewJob) %>% 
+  summarise(Count = n()) %>% 
+  mutate(pct = prop.table(Count)*100) %>% 
+  ungroup()
 
+# plot
+ggplot(data = job.gender,
+       aes(x = reorder(LastNewJob, pct),
+           y = pct,
+           fill = Gender)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  scale_fill_locuszoom() +
+  theme +
+  theme(legend.position = "right") +
+  labs(title = "Last Job by Gender",
+       x = NULL,
+       y = "Percent")
 ```
 
 # Conclusion
