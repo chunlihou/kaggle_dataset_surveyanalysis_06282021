@@ -1,0 +1,264 @@
+---
+title: "CODE"
+author: "Chun-Li Hou"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include = F}
+knitr::opts_chunk$set(echo = TRUE, 
+                      message = FALSE, warning = FALSE, 
+                      fig.align = "center")
+```
+
+# Objective
+
+This is an analysis of the StackOverflow survey dataset.
+
+# Preparation
+
+## Environment
+
+Let us set up the working environment and be ready for the analysis.
+
+```{r}
+if(!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, skimr, GGally, plotly, viridis, caret,
+               randomForest, e1071, rpart, xgboost, h2o, corrplot, 
+               rpart.plot, corrgram, lightgbm, ggplot2, highcharter, 
+               ggthemes, psych, scales, treemap, treemapify, repr,
+               cowplot, magrittr, ggpubr, RColorBrewer, plotrix, 
+               ggrepel, ggsci, gghalves)
+```
+
+```{r, echo = F, fig.width = 8, fig.height = 5}
+# theme
+theme = theme_bw() +
+  theme(plot.title = element_text(face = "bold", size = (15)),
+        plot.subtitle = element_text(size = (10)),
+        axis.title = element_text(size = (10))) +
+  theme(axis.text.x = element_text(angle = 0), legend.position = "none")
+
+# color
+# RD = #D43F3AFF
+# OG = #EEA236FF
+# GN = #5CB85CFF
+# LB = #46B8DAFF
+# DB = #357EBDFF
+# PR = #9632B8FF
+# GY = #B8B8B8FF
+```
+
+## Dataset
+
+The dataset has 129 columns and 98,855 rows.
+
+```{r}
+data = read_csv("DATA.csv")
+```
+
+# EDA for Business Insight
+
+## Treemap from Top 20 Countries with Most Respondents
+
+- Top 5 countries are US, India, Germany, UK, and Canada in sequence
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+top.countries = data %>%
+  group_by(Country) %>% 
+  summarise(Number = n()) %>%
+  ungroup() %>% 
+  mutate(Perc = round(Number/sum(Number)*100), 2) %>% 
+  arrange(desc(Number)) %>%
+  top_n(20, wt = Number)
+
+# plot
+ggplot(data = top.countries, 
+       aes(area = Number, 
+           fill = factor(Country), 
+           label = Country)) + 
+  geom_treemap(show.legend = F) + 
+  geom_treemap_text(fontface = "italic", 
+                    color = "black", 
+                    place = "centre") + 
+  scale_fill_d3(palette = c("category20"),
+                alpha = 0.5) +
+  labs(title = "Treemap from Top 20 Countries with Most Respondents",
+       x = NULL,
+       y = NULL)
+```
+
+## Amount and Percent of Respondents
+
+- US (21%), India(14%), Germany(7%), UK (6%), Canada (3%)
+- Top 5 countries represent 51% for over half of them
+
+```{r, fig.width = 8, fig.height = 5}
+# plot
+ggplot(data = top.countries,
+       aes(x = reorder(Country, Number), 
+           y = Number)) +
+  geom_bar(stat = "identity", fill = "#5CB85CFF") +
+  geom_text(aes(label = paste0(Perc, "%")),
+            hjust = -0.2,
+            vjust = 0.3,
+            size = 2.5,
+            color = "black") +
+  coord_flip() +
+  theme +
+  labs(title = "Amount and Percent of Respondents",
+       x = NULL,
+       y = NULL)
+```
+
+## Undergrad Majors with NAs
+
+- NA's is covered 20% of the undergrad majors
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+major.withna = data %>%
+  group_by(UndergradMajor) %>%
+  summarise(Count = round(n()/nrow(data)*100, 2)) %>% 
+  ungroup() %>% 
+  mutate(reorder(UndergradMajor, Count)) %>% 
+  arrange(desc(Count))
+
+# plot
+ggplot(data = major.withna,
+       aes(x = reorder(UndergradMajor, -Count),
+           y = Count)) +
+  geom_point(color = "#D43F3AFF", show.legend = F, size = 4) +
+  geom_segment(aes(x = UndergradMajor,
+                   xend = UndergradMajor,
+                   y = Count,
+                   yend = 0),
+               size = 1,
+               color = "#D43F3AFF") +
+  geom_label(aes(label = paste0(Count, "%")),
+             hjust = "inward",
+             size = 3,
+             color = "#D43F3AFF") +
+  coord_flip() +
+  theme +
+  labs(title = "Undergrad Majors with NAs",
+       x = NULL,
+       y = "Total Share (%)")
+```
+
+## Undergrad Majors without NAs
+
+- Top 3 undergrad majors are computer science, other engineer disciplines, information systems
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+major.withoutna = data %>%
+  group_by(UndergradMajor) %>% 
+  filter(!is.na(UndergradMajor)) %>% 
+  summarise(Percent = length(UndergradMajor)) %>% 
+  ungroup() %>%
+  mutate(pct = round(Percent/sum(Percent)*100, 2)) %>% 
+  arrange(desc(pct))
+
+# plot
+ggplot(data = major.withoutna,
+       aes(x = reorder(UndergradMajor, -pct),
+           y = pct)) +
+  geom_point(color = "#9632B8FF", show.legend = F, size = 4) +
+  geom_segment(aes(x = UndergradMajor,
+                   xend = UndergradMajor,
+                   y = pct,
+                   yend = 0),
+               size = 1,
+               color = "#9632B8FF") +
+  geom_label(aes(label = paste0(round(pct, 2), "%")),
+             hjust = "inward",
+             size = 3,
+             color = "#9632B8FF") + 
+  coord_flip() +
+  theme +
+  labs(title = "Undergrad Majors without NAs",
+       x = NULL,
+       y = "Total Share (%)")
+```
+
+## Distribution by Gender
+
+...
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+box.gender = data %>%
+  filter(Gender == "Male" | Gender == "Female") %>% 
+  filter(ConvertedSalary <= 450000) %>% 
+  filter(!is.na(ConvertedSalary)) %>% 
+  sample_n(500)
+
+# plot
+options(scipen = 999)
+ggplot(data = box.gender,
+       aes(x = Gender,
+           y = ConvertedSalary,
+           color = Gender,
+           fill = Gender)) +
+  geom_half_violin(side = "l",
+                   alpha = 0.3,
+                   trim = F) +
+  geom_half_boxplot(side = "r",
+                    alpha = 0.3,
+                    width = 0.6,
+                    outlier.size = 2) +
+  geom_jitter(alpha = 0.5,
+              size = 2) +
+  scale_color_locuszoom() +
+  scale_fill_locuszoom() +
+  theme +
+  labs(title = "Distribution by Gender",
+       x = NULL,
+       y = "Salary")
+```
+
+## 2
+
+...
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+edu.gender = data %>%
+  filter(Gender == "Male" | Gender == "Female") %>% 
+  filter(!is.na(FormalEducation)) %>% 
+  group_by(Gender, FormalEducation) %>% 
+  summarise(Count = length(Gender)) %>% 
+  ungroup() %>% 
+  mutate(pct = prop.table(Count)*100)
+
+# plot
+ggplot(data = edu.gender,
+       aes(x = reorder(FormalEducation, pct),
+           y = pct,
+           fill = Gender)) +
+  geom_col(position = "dodge") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 45)) +
+  coord_flip() +
+  scale_fill_locuszoom() +
+  theme +
+  labs(title = "Formal Education by Gender",
+       x = NULL,
+       y = "Percent")
+```
+
+# Conclusion
+
+# Reference
+
+1. [Title / 2017 / Name](https://)
+2. [Title / 2021 / Name](https://)
+3. [GGSCI / 2020 / SCI666](https://t.ly/Aonv)
