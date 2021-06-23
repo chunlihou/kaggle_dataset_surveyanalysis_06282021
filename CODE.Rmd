@@ -133,17 +133,17 @@ major.withna = data %>%
 ggplot(data = major.withna,
        aes(x = reorder(UndergradMajor, -Count),
            y = Count)) +
-  geom_point(color = "#D43F3AFF", show.legend = F, size = 4) +
+  geom_point(color = "#357EBDFF", show.legend = F, size = 4) +
   geom_segment(aes(x = UndergradMajor,
                    xend = UndergradMajor,
                    y = Count,
                    yend = 0),
                size = 1,
-               color = "#D43F3AFF") +
+               color = "#357EBDFF") +
   geom_label(aes(label = paste0(format(Count, digit = 2), "%")),
              hjust = "inward",
              size = 3,
-             color = "#D43F3AFF") +
+             color = "#357EBDFF") +
   coord_flip() +
   theme +
   labs(title = "Undergrad Majors with NAs",
@@ -186,7 +186,7 @@ ggplot(data = major.withoutna,
        y = "Total Share (%)")
 ```
 
-## Distribution by Gender
+## Distribution by Gender in Salary Sections
 
 ...
 
@@ -195,8 +195,8 @@ ggplot(data = major.withoutna,
 set.seed(123)
 box.gender = data %>%
   filter(Gender == "Male" | Gender == "Female") %>% 
-  filter(ConvertedSalary <= 450000) %>% 
   filter(!is.na(ConvertedSalary)) %>% 
+  filter(ConvertedSalary <= quantile(ConvertedSalary, 0.75)) %>% 
   sample_n(500)
 
 # plot
@@ -207,13 +207,13 @@ ggplot(data = box.gender,
            color = Gender,
            fill = Gender)) +
   geom_half_violin(side = "l",
-                   alpha = 0.3,
+                   alpha = 0.5,
                    trim = F) +
   geom_half_boxplot(side = "r",
-                    alpha = 0.3,
+                    alpha = 0.5,
                     width = 0.6,
                     outlier.size = 2) +
-  geom_jitter(alpha = 0.5,
+  geom_jitter(alpha = 0.3,
               size = 2) +
   scale_color_locuszoom() +
   scale_fill_locuszoom() +
@@ -251,6 +251,107 @@ ggplot(data = edu.gender,
   labs(title = "Formal Education by Gender",
        x = NULL,
        y = "Percent")
+```
+
+## Genders Group by Hobby
+
+...
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+hob.gender = data %>%
+  filter(Gender == "Male" | Gender == "Female") %>% 
+  filter(!is.na(Hobby)) %>% 
+  group_by(Gender, Hobby) %>% 
+  summarise(Count = n()) %>% 
+  mutate(pct = prop.table(Count)*100) %>% 
+  ungroup()
+
+# plot
+ggplot(data = hob.gender,
+       aes(x = reorder(Hobby, -pct),
+           y = pct,
+           fill = Gender)) +
+  geom_bar(stat = "identity") +
+  geom_label(aes(label = paste0(format(pct, digit = 4), "%")),
+             size = 4,
+             fill = "white") +   
+  facet_wrap(~Gender) +
+  scale_fill_locuszoom() +
+  theme +
+  # theme(strip.text.x = element_blank()) +
+  # theme(legend.position = "right") +
+  labs(title = "Genders Group by Hobby",
+       x = "Codes as a Hobby",
+       y = "Percent")  
+```
+## Student Status by Gender
+
+...
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+stu.gender = data %>%
+  filter(Gender == "Male" | Gender == "Female") %>% 
+  filter(!is.na(Student)) %>% 
+  group_by(Gender, Student) %>% 
+  summarise(Count = n()) %>% 
+  mutate(pct = prop.table(Count)*100) %>% 
+  ungroup()
+
+# plot
+ggplot(data = stu.gender,
+       aes(x = reorder(Student, -pct),
+           y = pct,
+           fill = Gender)) +
+  geom_bar(stat = "identity") +
+  geom_label(aes(label = paste0(format(pct, digit = 3), "%")),
+             size = 4,
+             fill = "white") +   
+  facet_wrap(~Gender) +
+  scale_fill_locuszoom() +
+  theme +
+  labs(title = "Student Status by Gender",
+       x = "Student Status",
+       y = "Percent")  
+```
+
+## Age by Gender
+
+...
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+age.gender = data %>%
+  filter(Gender == "Male" | Gender == "Female") %>% 
+  filter(!is.na(Age)) %>% 
+  group_by(Gender, Age) %>% 
+  summarise(Count = n()) %>% 
+  mutate(pct = prop.table(Count)*100) %>% 
+  ungroup()
+
+# plot
+ggplot(data = age.gender,
+       aes(x = reorder(Age, pct),
+           y = pct,
+           fill = Gender)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  scale_fill_locuszoom() +
+  theme +
+  theme(legend.position = "right") +
+  labs(title = "Age by Gender",
+       x = NULL,
+       y = "Percent")  
+```
+
+## Last Job by Gender
+
+...
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+
 ```
 
 # Conclusion
