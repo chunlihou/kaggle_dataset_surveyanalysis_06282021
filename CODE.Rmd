@@ -196,6 +196,7 @@ ggplot(data = major.withoutna,
 
 ```{r, fig.width = 8, fig.height = 5}
 # data
+set.seed(123)
 box.gender = data %>%
   filter(Gender == "Male" | Gender == "Female") %>% 
   filter(ConvertedSalary <= 450000) %>% 
