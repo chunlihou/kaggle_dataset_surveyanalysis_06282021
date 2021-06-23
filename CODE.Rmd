@@ -75,10 +75,9 @@ data = read_csv("DATA.csv")
 top.countries = data %>%
   group_by(Country) %>% 
   summarise(Number = n()) %>%
-  ungroup() %>% 
-  mutate(Perc = round(Number/sum(Number)*100), 2) %>% 
-  arrange(desc(Number)) %>%
-  top_n(20, wt = Number)
+  mutate(Perc = Number/sum(Number)) %>%
+  top_n(20, wt = Number) %>% 
+  ungroup()
 
 # plot
 ggplot(data = top.countries, 
@@ -107,7 +106,7 @@ ggplot(data = top.countries,
        aes(x = reorder(Country, Number), 
            y = Number)) +
   geom_bar(stat = "identity", fill = "#5CB85CFF") +
-  geom_text(aes(label = paste0(Perc, "%")),
+  geom_text(aes(label = paste0(round(Perc*100, 0), "%")),
             hjust = -0.2,
             vjust = 0.3,
             size = 2.5,
@@ -127,10 +126,8 @@ ggplot(data = top.countries,
 # data
 major.withna = data %>%
   group_by(UndergradMajor) %>%
-  summarise(Count = round(n()/nrow(data)*100, 2)) %>% 
-  ungroup() %>% 
-  mutate(reorder(UndergradMajor, Count)) %>% 
-  arrange(desc(Count))
+  summarise(Count = n()/nrow(data)*100) %>% 
+  ungroup()
 
 # plot
 ggplot(data = major.withna,
@@ -143,7 +140,7 @@ ggplot(data = major.withna,
                    yend = 0),
                size = 1,
                color = "#D43F3AFF") +
-  geom_label(aes(label = paste0(Count, "%")),
+  geom_label(aes(label = paste0(format(Count, digit = 2), "%")),
              hjust = "inward",
              size = 3,
              color = "#D43F3AFF") +
@@ -164,9 +161,8 @@ major.withoutna = data %>%
   group_by(UndergradMajor) %>% 
   filter(!is.na(UndergradMajor)) %>% 
   summarise(Percent = length(UndergradMajor)) %>% 
-  ungroup() %>%
-  mutate(pct = round(Percent/sum(Percent)*100, 2)) %>% 
-  arrange(desc(pct))
+  mutate(pct = prop.table(Percent)*100) %>%
+  ungroup()
 
 # plot
 ggplot(data = major.withoutna,
@@ -179,7 +175,7 @@ ggplot(data = major.withoutna,
                    yend = 0),
                size = 1,
                color = "#9632B8FF") +
-  geom_label(aes(label = paste0(round(pct, 2), "%")),
+  geom_label(aes(label = paste0(format(pct, digit = 2), "%")),
              hjust = "inward",
              size = 3,
              color = "#9632B8FF") + 
@@ -227,7 +223,7 @@ ggplot(data = box.gender,
        y = "Salary")
 ```
 
-## 2
+## Formal Education by Gender
 
 ...
 
@@ -238,8 +234,8 @@ edu.gender = data %>%
   filter(!is.na(FormalEducation)) %>% 
   group_by(Gender, FormalEducation) %>% 
   summarise(Count = length(Gender)) %>% 
-  ungroup() %>% 
-  mutate(pct = prop.table(Count)*100)
+  mutate(pct = prop.table(Count)*100) %>% 
+  ungroup()
 
 # plot
 ggplot(data = edu.gender,
@@ -251,6 +247,7 @@ ggplot(data = edu.gender,
   coord_flip() +
   scale_fill_locuszoom() +
   theme +
+  theme(legend.position = "right") +
   labs(title = "Formal Education by Gender",
        x = NULL,
        y = "Percent")
