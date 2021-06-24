@@ -387,7 +387,8 @@ ggplot(data = job.gender,
 
 ### Top Current Languages by Gender
 
-...
+- Top 3 languages used by both genders are Javascript, HTML, and CSS
+- Top 3 languages are used as web designing
 
 ```{r, fig.width = 8, fig.height = 8, results = "hide"}
 # data
@@ -428,6 +429,82 @@ pyramid.plot(male$Percent,
              show.values = T,
              lxcol = mfunc(nrow(male)),
              rxcol = ffunc(nrow(female)))
+```
+
+## Language
+
+### Python VS R for Language Preference
+
+...
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+lang.pref = data %>%
+  filter(LanguageWorkedWith == "Python" | LanguageWorkedWith == "R") %>%
+  filter(!is.na(Country)) %>% 
+  group_by(Country, LanguageWorkedWith) %>% 
+  summarise(Count = n()) %>% 
+  arrange(desc(Count)) %>% 
+  head(30) %>% 
+  ungroup()
+
+# plot
+ggplot(data = lang.pref,
+       aes(x = reorder(Country, Count),
+           y = Count,
+           fill = LanguageWorkedWith)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~LanguageWorkedWith) +
+  coord_flip() +
+  scale_fill_locuszoom() +
+  theme +
+  labs(title = "Python VS R for Language Preference",
+       x = "Country",
+       y = "Count")
+```
+
+## Employment
+
+### Pie Chart by Employmen
+
+...
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+emp.pie = data %>%
+  filter(!is.na(Employment)) %>% 
+  group_by(Employment) %>% 
+  summarise(Count = n()) %>% 
+  mutate(pct = prop.table(Count)*100) %>% 
+  ungroup()
+
+# plot
+ggplot(data = emp.pie,
+       aes(x = "",
+           y = pct,
+           fill = Employment)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y",
+              start = 0) +
+  scale_fill_locuszoom() +
+  theme +
+  theme(axis.line = element_blank(),
+        axis.text.x = element_blank(),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "right",
+        plot.title = element_text(hjust = 0.6)) +
+  labs(title = "Pie Chart by Employment",
+       x = NULL,
+       y = NULL)  
+```
+
+## Next
+
+...
+
+```{r}
+
 ```
 
 # Conclusion
