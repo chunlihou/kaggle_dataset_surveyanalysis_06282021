@@ -385,26 +385,50 @@ ggplot(data = job.gender,
        y = "Percent")
 ```
 
-## 123
+### Top Current Languages by Gender
 
 ...
 
-```{r, fig.width = 8, fig.height = 5}
+```{r, fig.width = 8, fig.height = 8, results = "hide"}
 # data
-# mfunc
-# ffunc
-# cur.lang = 
-data %>% 
+cur.lang = data %>%
   filter(Gender == "Male" | Gender == "Female") %>% 
   filter(!is.na(LanguageWorkedWith)) %>% 
   mutate(LanguageWorkedWith = str_split(LanguageWorkedWith,
                                         pattern = ";")) %>% 
-  select(Gender, LanguageWorkedWith) %>% 
-  unnest(LanguageWorkedWith)
+  select(Gender, LanguageWorkedWith) %>%
+  unnest(LanguageWorkedWith) %>% 
+  group_by(Gender, LanguageWorkedWith) %>% 
+  summarise(Count = n()) %>% 
+  mutate(Percent = prop.table(Count)*100) %>%
+  mutate(Percent = round(Percent, 1)) %>% 
+  arrange(desc(Count)) %>% 
+  mutate(LanguageWorkedWith = reorder(LanguageWorkedWith, Count)) %>% 
+  ungroup()
 
-z# plot
+male = cur.lang %>% 
+  filter(Gender == "Male") %>%
+  arrange(desc(LanguageWorkedWith))
+female = cur.lang %>% 
+  filter(Gender == "Female") %>% 
+  arrange(desc(LanguageWorkedWith))
+lang.labels = cur.lang %>% 
+  arrange(desc(LanguageWorkedWith))
+
+mfunc = colorRampPalette(c("red", "orange", "blue"))
+ffunc = colorRampPalette(c("pink", "purple", "yellow"))
+
+# plot
+pyramid.plot(male$Percent,
+             female$Percent,
+             labels = unique(lang.labels$LanguageWorkedWith),
+             top.labels = c("Male", "", "Female"),
+             main = "Top Current Languages by Gender",
+             gap = 5,
+             show.values = T,
+             lxcol = mfunc(nrow(male)),
+             rxcol = ffunc(nrow(female)))
 ```
-
 
 # Conclusion
 
