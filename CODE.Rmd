@@ -192,18 +192,19 @@ ggplot(data = major.withoutna,
 
 ## Gender
 
-### Distribution by Gender in Salary Sections
+### Salary by Gender
 
-...
+- Males tend to have a higher presence compared to female
+- Both salary structures are the same in males and females, but males tend to have a higher ceiling
 
 ```{r, fig.width = 8, fig.height = 5}
 # data
-set.seed(123)
+# set.seed(323)
 box.gender = data %>%
   filter(Gender == "Male" | Gender == "Female") %>% 
   filter(!is.na(ConvertedSalary)) %>% 
-  filter(ConvertedSalary <= quantile(ConvertedSalary, 0.75)) %>% 
-  sample_n(500)
+  filter(ConvertedSalary <= quantile(ConvertedSalary, 0.95))
+  # %>% sample_n(1000)
 
 # plot
 options(scipen = 999)
@@ -217,21 +218,21 @@ ggplot(data = box.gender,
                    trim = F) +
   geom_half_boxplot(side = "r",
                     alpha = 0.5,
-                    width = 0.6,
+                    width = 0.7,
                     outlier.size = 2) +
-  geom_jitter(alpha = 0.3,
-              size = 2) +
+  # geom_jitter(alpha = 0.3,
+  #             size = 2) +
   scale_color_locuszoom() +
   scale_fill_locuszoom() +
   theme +
-  labs(title = "Distribution by Gender",
+  labs(title = "Salary by Gender",
        x = NULL,
        y = "Salary")
 ```
 
 ### Formal Education by Gender
 
-...
+- Females tend to have more formal education, such as bachelor's and master's degree, than males
 
 ```{r, fig.width = 8, fig.height = 5}
 # data
@@ -259,9 +260,9 @@ ggplot(data = edu.gender,
        y = "Percent")
 ```
 
-### Genders Group by Hobby
+### Hobby by Gender
 
-...
+- Males code as a hobby more than females
 
 ```{r, fig.width = 8, fig.height = 5}
 # data
@@ -287,13 +288,15 @@ ggplot(data = hob.gender,
   theme +
   # theme(strip.text.x = element_blank()) +
   # theme(legend.position = "right") +
-  labs(title = "Genders Group by Hobby",
+  labs(title = "Hobby by Gender",
        x = "Codes as a Hobby",
        y = "Percent")
 ```
+
 ### Student Status by Gender
 
-...
+- Most respondents are not students
+- No gender distinction is in student status
 
 ```{r, fig.width = 8, fig.height = 5}
 # data
@@ -324,7 +327,8 @@ ggplot(data = stu.gender,
 
 ### Age by Gender
 
-...
+- Most respondents are young from 10's, 20's and 30's
+- Females tend to have a younger group than males
 
 ```{r, fig.width = 8, fig.height = 5}
 # data
@@ -353,7 +357,8 @@ ggplot(data = age.gender,
 
 ### Last Job by Gender
 
-...
+- Females last job is less than a year ago compared to males
+- Males last job is more than 4 years ago compared to females
 
 ```{r, fig.width = 8, fig.height = 5}
 # data
@@ -379,6 +384,27 @@ ggplot(data = job.gender,
        x = NULL,
        y = "Percent")
 ```
+
+## 123
+
+...
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+# mfunc
+# ffunc
+# cur.lang = 
+data %>% 
+  filter(Gender == "Male" | Gender == "Female") %>% 
+  filter(!is.na(LanguageWorkedWith)) %>% 
+  mutate(LanguageWorkedWith = str_split(LanguageWorkedWith,
+                                        pattern = ";")) %>% 
+  select(Gender, LanguageWorkedWith) %>% 
+  unnest(LanguageWorkedWith)
+
+z# plot
+```
+
 
 # Conclusion
 
