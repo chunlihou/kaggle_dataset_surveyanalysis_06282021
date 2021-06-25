@@ -108,8 +108,8 @@ ggplot(data = top.countries,
        aes(x = reorder(Country, Number), 
            y = Number)) +
   geom_bar(stat = "identity", fill = "#5CB85CFF") +
-  geom_text(aes(label = paste0(round(Perc*100, 0), "%")),
-            hjust = -0.2,
+  geom_text(aes(label = paste0(format(Perc*100, digit = 2), "%")),
+            hjust = -0.05,
             vjust = 0.3,
             size = 2.5,
             color = "black") +
@@ -117,7 +117,7 @@ ggplot(data = top.countries,
   theme +
   labs(title = "Amount and Percent of Respondents",
        x = NULL,
-       y = NULL)
+       y = "Count")
 ```
 
 ### Distribution of Salary by Country
@@ -162,21 +162,19 @@ ggplot(data = dist.sal) +
        y = "Log Converted Salary")
 ```
 
-### K
+### Employment Rate from Top Surveyed Countries
 
-...
+- Switzerland and South Africa are amongst the highest in employment
 
 ```{r, fig.width = 8, fig.height = 8}
 # data
+temp = c("Employed part-time",
+         "Employed full-time",
+         "Independent contractor, freelancer, or self-employed")
 emp.con = data %>%
   filter(!is.na(Country)) %>% 
   group_by(Country) %>% 
-  summarise(avg.emp = mean(Employment %in% c("Employed part-time",
-                                             "Employed full-time",
-                                             "Independent contractor,
-                                             freelancer, or
-                                             self-employed"),
-                           na.rm = T),
+  summarise(avg.emp = mean(Employment %in% temp, na.rm = T),
             Count = n()) %>% 
   filter(Count > 500) %>% 
   ungroup()
@@ -186,22 +184,22 @@ ggplot(data = emp.con,
        aes(x = reorder(Country, avg.emp),
            y = avg.emp)) +
   geom_point(size = 5,
-             color = "red") +
+             color = "#357EBDFF") +
   geom_segment(aes(x = Country,
                    xend = Country,
                    y = 0,
                    yend = avg.emp),
-               color = "red") +
-  geom_label(aes(label = paste0(format(avg.emp, digit = 2), "%")),
+               color = "#357EBDFF") +
+  geom_label(aes(label = paste0(format(avg.emp*100, digit = 3), "%")),
              hjust = "inward",
              size = 3,
              color = "#357EBDFF") +
   scale_y_continuous(labels = percent_format()) +
   coord_flip() +
   theme +
-  labs(title = "Average Employment from Top Surveyed Countries",
-       x = "Country of Origin",
-       y = "Average Employment")  
+  labs(title = "Employment Rate from Top Surveyed Countries",
+       x = NULL,
+       y = "Employment Rate")  
 ```
 
 ## Major
@@ -228,16 +226,16 @@ ggplot(data = major.withna,
                    yend = 0),
                size = 1,
                color = "#357EBDFF") +
-  geom_label(aes(label = paste0(format(Count*100, digit = 2), "%")),
+  geom_label(aes(label = paste0(format(Count*100, digit = 1), "%")),
              hjust = "inward",
              size = 3,
              color = "#357EBDFF") +
-  # scale_y_continuous(labels = percent_format(french_percent)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   coord_flip() +
   theme +
   labs(title = "Undergrad Majors with NAs",
        x = NULL,
-       y = "Total Share")
+       y = NULL)
 ```
 
 ### Undergrad Majors without NAs
@@ -264,7 +262,7 @@ ggplot(data = major.withoutna,
                    yend = 0),
                size = 1,
                color = "#9632B8FF") +
-  geom_label(aes(label = paste0(format(pct*100, digit = 2), "%")),
+  geom_label(aes(label = paste0(format(pct*100, digit = 1), "%")),
              hjust = "inward",
              size = 3,
              color = "#9632B8FF") + 
@@ -273,7 +271,52 @@ ggplot(data = major.withoutna,
   theme +
   labs(title = "Undergrad Majors without NAs",
        x = NULL,
-       y = "Total Share")
+       y = NULL)
+```
+
+### Member VS Participation by Undergrad Major
+
+- People studying natural science are amongst the group that participates the most in Stackoverflow
+- People who study computer science feel that they belong more to the community, also the biggest group in this community
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+temp = c("Multiple times per day",
+         "Daily or almost daily",
+         "A few times per week",
+         "A few times per month or weekly")
+under.grad = data %>%
+  select(UndergradMajor, StackOverflowParticipate, StackOverflowConsiderMember) %>%   
+  filter(!is.na(UndergradMajor)) %>% 
+  group_by(UndergradMajor) %>%
+  summarise(Part = mean(StackOverflowParticipate %in% temp,
+                        na.rm = T),
+            Memb = mean(StackOverflowConsiderMember == "Yes",
+                        na.rm = T),
+            Count = n())
+
+# plot
+ggplot(data = under.grad,
+       aes(x = Part,
+           y = Memb)) +
+  geom_smooth(method = "lm",
+              color = "#D43F3AFF",
+              size = 1.5) +
+  geom_text_repel(aes(label = UndergradMajor),
+                  size = 3,
+                  point.padding = 0.1,
+                  family = "IBMPlexSans") +
+  geom_point(aes(size = Count),
+             alpha = 0.8,
+             color = "#EEA236FF") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_size_continuous(labels = comma_format()) +
+  theme +
+  theme(legend.position = "right") +
+  labs(title = "Member VS Participation by Undergrad Major",
+       x = "% of Participation",
+       y = "% of Who Believes Is A Member")  
 ```
 
 ## Gender
@@ -327,7 +370,7 @@ edu.gender = data %>%
   filter(!is.na(FormalEducation)) %>% 
   group_by(Gender, FormalEducation) %>% 
   summarise(Count = length(Gender)) %>% 
-  mutate(pct = prop.table(Count)*100) %>% 
+  mutate(pct = prop.table(Count)) %>% 
   ungroup()
 
 # plot
@@ -337,13 +380,14 @@ ggplot(data = edu.gender,
            fill = Gender)) +
   geom_col(position = "dodge") +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 45)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   coord_flip() +
   scale_fill_locuszoom() +
   theme +
   theme(legend.position = "right") +
   labs(title = "Formal Education by Gender",
        x = NULL,
-       y = "Percent")
+       y = NULL)
 ```
 
 ### Hobby by Gender
@@ -357,7 +401,7 @@ hob.gender = data %>%
   filter(!is.na(Hobby)) %>% 
   group_by(Gender, Hobby) %>% 
   summarise(Count = n()) %>% 
-  mutate(pct = prop.table(Count)*100) %>% 
+  mutate(pct = prop.table(Count)) %>% 
   ungroup()
 
 # plot
@@ -366,17 +410,18 @@ ggplot(data = hob.gender,
            y = pct,
            fill = Gender)) +
   geom_bar(stat = "identity") +
-  geom_label(aes(label = paste0(format(pct, digit = 4), "%")),
+  geom_label(aes(label = paste0(format(pct*100, digit = 3), "%")),
              size = 4,
              fill = "white") +   
   facet_wrap(~Gender) +
+  scale_y_continuous(labels = percent_format()) +
   scale_fill_locuszoom() +
   theme +
   # theme(strip.text.x = element_blank()) +
   # theme(legend.position = "right") +
   labs(title = "Hobby by Gender",
        x = "Codes as a Hobby",
-       y = "Percent")
+       y = NULL)
 ```
 
 ### Student Status by Gender
@@ -391,7 +436,7 @@ stu.gender = data %>%
   filter(!is.na(Student)) %>% 
   group_by(Gender, Student) %>% 
   summarise(Count = n()) %>% 
-  mutate(pct = prop.table(Count)*100) %>% 
+  mutate(pct = prop.table(Count)) %>% 
   ungroup()
 
 # plot
@@ -400,15 +445,16 @@ ggplot(data = stu.gender,
            y = pct,
            fill = Gender)) +
   geom_bar(stat = "identity") +
-  geom_label(aes(label = paste0(format(pct, digit = 3), "%")),
+  geom_label(aes(label = paste0(format(pct*100, digit = 2), "%")),
              size = 4,
-             fill = "white") +   
+             fill = "white") +  
+  scale_y_continuous(labels = percent_format()) +  
   facet_wrap(~Gender) +
   scale_fill_locuszoom() +
   theme +
   labs(title = "Student Status by Gender",
        x = "Student Status",
-       y = "Percent")
+       y = NULL)
 ```
 
 ### Age by Gender
@@ -423,7 +469,7 @@ age.gender = data %>%
   filter(!is.na(Age)) %>% 
   group_by(Gender, Age) %>% 
   summarise(Count = n()) %>% 
-  mutate(pct = prop.table(Count)*100) %>% 
+  mutate(pct = prop.table(Count)) %>% 
   ungroup()
 
 # plot
@@ -432,13 +478,14 @@ ggplot(data = age.gender,
            y = pct,
            fill = Gender)) +
   geom_col(position = "dodge") +
+  scale_y_continuous(labels = percent_format()) +
   coord_flip() +
   scale_fill_locuszoom() +
   theme +
   theme(legend.position = "right") +
   labs(title = "Age by Gender",
        x = NULL,
-       y = "Percent")
+       y = NULL)
 ```
 
 ### Last Job by Gender
@@ -453,7 +500,7 @@ job.gender = data %>%
   filter(!is.na(LastNewJob)) %>% 
   group_by(Gender, LastNewJob) %>% 
   summarise(Count = n()) %>% 
-  mutate(pct = prop.table(Count)*100) %>% 
+  mutate(pct = prop.table(Count)) %>% 
   ungroup()
 
 # plot
@@ -462,13 +509,14 @@ ggplot(data = job.gender,
            y = pct,
            fill = Gender)) +
   geom_col(position = "dodge") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   coord_flip() +
   scale_fill_locuszoom() +
   theme +
   theme(legend.position = "right") +
   labs(title = "Last Job by Gender",
        x = NULL,
-       y = "Percent")
+       y = NULL)
 ```
 
 ### Top Current Languages by Gender
@@ -575,7 +623,7 @@ ggplot(data = lang.pref,
   scale_fill_locuszoom() +
   theme +
   labs(title = "Python VS R for Language Preference",
-       x = "Country",
+       x = NULL,
        y = "Count")
 ```
 
