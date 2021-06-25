@@ -35,7 +35,7 @@ pacman::p_load(tidyverse, skimr, GGally, plotly, viridis, caret,
                rpart.plot, corrgram, lightgbm, ggplot2, highcharter, 
                ggthemes, psych, scales, treemap, treemapify, repr,
                cowplot, magrittr, ggpubr, RColorBrewer, plotrix, 
-               ggrepel, ggsci, gghalves)
+               ggrepel, ggsci, gghalves, robustHD)
 ```
 
 ```{r, echo = F, fig.width = 8, fig.height = 5}
@@ -162,6 +162,48 @@ ggplot(data = dist.sal) +
        y = "Log Converted Salary")
 ```
 
+### K
+
+...
+
+```{r, fig.width = 8, fig.height = 8}
+# data
+emp.con = data %>%
+  filter(!is.na(Country)) %>% 
+  group_by(Country) %>% 
+  summarise(avg.emp = mean(Employment %in% c("Employed part-time",
+                                             "Employed full-time",
+                                             "Independent contractor,
+                                             freelancer, or
+                                             self-employed"),
+                           na.rm = T),
+            Count = n()) %>% 
+  filter(Count > 500) %>% 
+  ungroup()
+
+# plot
+ggplot(data = emp.con,
+       aes(x = reorder(Country, avg.emp),
+           y = avg.emp)) +
+  geom_point(size = 5,
+             color = "red") +
+  geom_segment(aes(x = Country,
+                   xend = Country,
+                   y = 0,
+                   yend = avg.emp),
+               color = "red") +
+  geom_label(aes(label = paste0(format(avg.emp, digit = 2), "%")),
+             hjust = "inward",
+             size = 3,
+             color = "#357EBDFF") +
+  scale_y_continuous(labels = percent_format()) +
+  coord_flip() +
+  theme +
+  labs(title = "Average Employment from Top Surveyed Countries",
+       x = "Country of Origin",
+       y = "Average Employment")  
+```
+
 ## Major
 
 ### Undergrad Majors with NAs
@@ -172,7 +214,7 @@ ggplot(data = dist.sal) +
 # data
 major.withna = data %>%
   group_by(UndergradMajor) %>%
-  summarise(Count = n()/nrow(data)*100) %>% 
+  summarise(Count = n()/nrow(data)) %>% 
   ungroup()
 
 # plot
@@ -186,15 +228,16 @@ ggplot(data = major.withna,
                    yend = 0),
                size = 1,
                color = "#357EBDFF") +
-  geom_label(aes(label = paste0(format(Count, digit = 2), "%")),
+  geom_label(aes(label = paste0(format(Count*100, digit = 2), "%")),
              hjust = "inward",
              size = 3,
              color = "#357EBDFF") +
+  # scale_y_continuous(labels = percent_format(french_percent)) +
   coord_flip() +
   theme +
   labs(title = "Undergrad Majors with NAs",
        x = NULL,
-       y = "Total Share (%)")
+       y = "Total Share")
 ```
 
 ### Undergrad Majors without NAs
@@ -207,7 +250,7 @@ major.withoutna = data %>%
   group_by(UndergradMajor) %>% 
   filter(!is.na(UndergradMajor)) %>% 
   summarise(Percent = length(UndergradMajor)) %>% 
-  mutate(pct = prop.table(Percent)*100) %>%
+  mutate(pct = prop.table(Percent)) %>%
   ungroup()
 
 # plot
@@ -221,15 +264,16 @@ ggplot(data = major.withoutna,
                    yend = 0),
                size = 1,
                color = "#9632B8FF") +
-  geom_label(aes(label = paste0(format(pct, digit = 2), "%")),
+  geom_label(aes(label = paste0(format(pct*100, digit = 2), "%")),
              hjust = "inward",
              size = 3,
              color = "#9632B8FF") + 
+  scale_y_continuous(labels = percent_format()) +
   coord_flip() +
   theme +
   labs(title = "Undergrad Majors without NAs",
        x = NULL,
-       y = "Total Share (%)")
+       y = "Total Share")
 ```
 
 ## Gender
@@ -494,7 +538,7 @@ ggplot(data = sal.gender,
            y = Country,
            size = MS)) +
   geom_point(aes(color = Gender)) +
-  scale_fill_locuszoom() +
+  scale_color_locuszoom() +
   theme +
   labs(title = "Salary by Gender",
        x = NULL,
@@ -575,11 +619,87 @@ ggplot(data = emp.pie,
 
 ### Salary by Race Ethnicity
 
-...
+- American, European, and Oceania have above average paid 
+- Asian, African, and Hispanic have below average paid
 
 ```{r, fig.width = 8, fig.height = 5}
 # data
+sal.race = data %>%
+  filter(!is.na(RaceEthnicity)) %>% 
+  filter(!is.na(ConvertedSalary)) %>% 
+  select(RaceEthnicity, ConvertedSalary) %>%
+  mutate(RaceEthnicity = str_split(RaceEthnicity, pattern = ",")) %>% 
+  unnest(RaceEthnicity) %>% 
+  mutate(RaceEthnicity = str_split(RaceEthnicity, pattern = ";")) %>% 
+  unnest(RaceEthnicity) %>% 
+  group_by(RaceEthnicity) %>%
+  summarise(avg = mean(ConvertedSalary)) %>% 
+  mutate(per = standardize(avg)) %>% 
+  mutate(per.type = ifelse(per < 0,
+                           "Below Average",
+                           "Above Average"))
 
+sal.race$RaceEthnicity = c("Indigenous Australian",
+                           "Pacific Islander",
+                           "Black African",
+                           "East Asian",
+                           "Hispanic",
+                           "Middle Eastern",
+                           "Native American",
+                           "South Asian",
+                           "White European")
+
+# plot
+ggplot(data = sal.race,
+       aes(x = reorder(RaceEthnicity, per),
+           y = per)) +
+  geom_bar(stat = "identity",
+           aes(fill = per.type),
+           width = 0.6) +
+  coord_flip() +
+  scale_fill_locuszoom(name = "Salary",
+                       labels = c("Above Avg",
+                                  "Below Avg")) +
+  theme +
+  theme(legend.position = "right") +
+  labs(title = "Salary by Race Ethnicity",
+       x = NULL,
+       y = "Standardized Salary")
+```
+
+## Company
+
+### Company Size
+
+- Medium size companies have the most respondents due to having needs and requiring DIY help, which is almost half of them
+- Large size companies might have their own departments to solve the problem
+- Small size companies might not need a lot of programming on their business
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+comp.size = data %>%
+  filter(!is.na(CompanySize)) %>% 
+  group_by(CompanySize) %>% 
+  summarise(Count = n()) %>% 
+  mutate(pct = prop.table(Count)*100) %>% 
+  ungroup()
+
+# plot
+ggplot(data = comp.size,
+       aes(x = reorder(CompanySize, Count),
+           y = Count)) +
+  geom_bar(stat = "identity",
+           show.legend = F,
+           fill = "#5CB85CFF") +
+  geom_label(aes(label = paste0(format(pct, digit = 2), "%")),
+             size = 4,
+             color = "#5CB85CFF") + 
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 15)) +
+  coord_flip() +
+  theme +
+  labs(title = "Company Size for Respondents",
+       x = NULL,
+       y = "Count")
 ```
 
 # Conclusion
