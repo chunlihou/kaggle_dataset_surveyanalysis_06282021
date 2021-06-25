@@ -120,6 +120,44 @@ ggplot(data = top.countries,
        y = NULL)
 ```
 
+### K
+
+...
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+con.sal = data %>%
+  filter(Employment == "Employed full-time") %>% 
+  filter(!is.na(Country)) %>% 
+  group_by(Country) %>% 
+  mutate(Count = n()) %>% 
+  filter(Count > 500) %>% 
+  summarise(m.sal = median(ConvertedSalary, na.rm = T)) %>% 
+  arrange(desc(m.sal)) %>% 
+  select(Country) %>%
+  mutate(Country = factor(Country))
+
+dist.sal = data %>%
+  filter(Employment == "Employed full-time") %>% 
+  filter(!is.na(Country)) %>% 
+  group_by(Country) %>% 
+  mutate(Count = n()) %>% 
+  filter(Count > 500)
+
+# plot
+ggplot(data = dist.sal) +
+  geom_violin(aes(x = reorder(Country, ConvertedSalary),
+                  y = ConvertedSalary),
+              fill = "red") +
+  scale_x_discrete(limits = con.sal$Country) +
+  scale_y_log10() +
+  coord_flip() +
+  theme +
+  labs(title = "Distribution of Salary",
+       x = "Country",
+       y = "Log Converted Salary")
+```
+
 ## Major
 
 ### Undergrad Majors with NAs
@@ -435,7 +473,9 @@ pyramid.plot(male$Percent,
 
 ### Python VS R for Language Preference
 
-...
+- Top 5 countries with most respondents use more Python than R
+- US and Germany use R more considerably
+- US, India, and UK use Python more considerably
 
 ```{r, fig.width = 8, fig.height = 5}
 # data
@@ -467,7 +507,7 @@ ggplot(data = lang.pref,
 
 ### Pie Chart by Employmen
 
-...
+- Most respondents as almost 75% of them are employed fulltime
 
 ```{r, fig.width = 8, fig.height = 5}
 # data
@@ -499,15 +539,17 @@ ggplot(data = emp.pie,
        y = NULL)  
 ```
 
-## Next
+## Company Size
 
 ...
 
-```{r}
+```{r, fig.width = 8, fig.height = 5}
 
 ```
 
 # Conclusion
+
+...
 
 # Reference
 
