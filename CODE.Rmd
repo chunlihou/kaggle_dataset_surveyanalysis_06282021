@@ -97,7 +97,7 @@ ggplot(data = top.countries,
        y = NULL)
 ```
 
-### Amount and Percent of Respondents
+### Amount and Percent of Respondents by Country
 
 - US (21%), India(14%), Germany(7%), UK (6%), Canada (3%)
 - Top 5 countries represent 51% for over half of them
@@ -120,11 +120,12 @@ ggplot(data = top.countries,
        y = NULL)
 ```
 
-### K
+### Distribution of Salary by Country
 
-...
+- US, Switzerland, and Israel offer the best
+- India and China tend to have a larger variance on an offer
 
-```{r, fig.width = 8, fig.height = 5}
+```{r, fig.width = 8, fig.height = 8}
 # data
 con.sal = data %>%
   filter(Employment == "Employed full-time") %>% 
@@ -135,26 +136,29 @@ con.sal = data %>%
   summarise(m.sal = median(ConvertedSalary, na.rm = T)) %>% 
   arrange(desc(m.sal)) %>% 
   select(Country) %>%
-  mutate(Country = factor(Country))
+  mutate(Country = factor(Country)) %>% 
+  ungroup()
 
 dist.sal = data %>%
   filter(Employment == "Employed full-time") %>% 
   filter(!is.na(Country)) %>% 
   group_by(Country) %>% 
   mutate(Count = n()) %>% 
-  filter(Count > 500)
+  filter(Count > 500) %>% 
+  ungroup()
 
 # plot
+options(scipen = 999)
 ggplot(data = dist.sal) +
-  geom_violin(aes(x = reorder(Country, ConvertedSalary),
+  geom_violin(aes(x = Country,
                   y = ConvertedSalary),
-              fill = "red") +
+              fill = "#46B8DAFF") +
   scale_x_discrete(limits = con.sal$Country) +
   scale_y_log10() +
   coord_flip() +
   theme +
   labs(title = "Distribution of Salary",
-       x = "Country",
+       x = NULL,
        y = "Log Converted Salary")
 ```
 
@@ -469,6 +473,34 @@ pyramid.plot(male$Percent,
              rxcol = ffunc(nrow(female)))
 ```
 
+### Salary by Gender
+
+- Male gets more paid in most of the countries
+- Female gets only significant more paid in Cyprus
+
+```{r, fig.width = 8, fig.height = 8}
+# data
+sal.gender = data %>%
+  filter(Gender == "Male" | Gender == "Female") %>% 
+  filter(!is.na(ConvertedSalary)) %>% 
+  group_by(Gender, Country) %>% 
+  summarise(MS = mean(ConvertedSalary)) %>% 
+  filter(MS > quantile(MS, 0.75)) %>%
+  ungroup()
+
+# plot
+ggplot(data = sal.gender,
+       aes(x = Gender,
+           y = Country,
+           size = MS)) +
+  geom_point(aes(color = Gender)) +
+  scale_fill_locuszoom() +
+  theme +
+  labs(title = "Salary by Gender",
+       x = NULL,
+       y = NULL)  
+```
+
 ## Language
 
 ### Python VS R for Language Preference
@@ -539,11 +571,14 @@ ggplot(data = emp.pie,
        y = NULL)  
 ```
 
-## Company Size
+## Race
+
+### Salary by Race Ethnicity
 
 ...
 
 ```{r, fig.width = 8, fig.height = 5}
+# data
 
 ```
 
