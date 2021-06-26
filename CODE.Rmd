@@ -20,15 +20,15 @@ knitr::opts_chunk$set(echo = TRUE,
 
 # Objective
 
-This is an analysis of the StackOverflow survey dataset.
+- This is an analysis of the Stack Overflow survey dataset
 
 # Preparation
 
 ## Environment
 
-Let us set up the working environment and be ready for the analysis.
+- Let us set up the working environment and be ready for the analysis
 
-```{r}
+```{r, echo = F}
 if(!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, skimr, GGally, plotly, viridis, caret,
                randomForest, e1071, rpart, xgboost, h2o, corrplot, 
@@ -39,7 +39,7 @@ pacman::p_load(tidyverse, skimr, GGally, plotly, viridis, caret,
                htmlwidgets, webshot)
 ```
 
-```{r, echo = F, fig.width = 8, fig.height = 5}
+```{r}
 # theme
 theme = theme_bw() +
   theme(plot.title = element_text(face = "bold", size = (15)),
@@ -59,7 +59,7 @@ theme = theme_bw() +
 
 ## Dataset
 
-The dataset has 129 columns and 98,855 rows.
+- The dataset has 129 columns and 98,855 rows
 
 ```{r}
 data = read_csv("DATA.csv")
@@ -203,6 +203,83 @@ ggplot(data = emp.con,
        y = "Employment Rate")  
 ```
 
+### Female to Male Ratio by Country
+
+- We take only the countries with more than 100 developers as analyzing
+- The best female to male ratio is 16.6%, which means roughly 16 girls do as developers per 100 developers in that country
+- The worst ratio is 1.9%, which means 1 out of 100 is a girl to do as a developer
+
+```{r, fig.width = 8, fig.height = 5}
+# data
+fm.r = data %>%
+  filter(!is.na(Country)) %>% 
+  filter(Gender == "Male" | Gender == "Female") %>% 
+  group_by(Country, Gender) %>% 
+  summarise(Count = n()) %>% 
+  spread(Gender, Count) %>% 
+  mutate(F2M = Female/Male,
+         N = Female + Male) %>% 
+  filter(N > 100) %>%
+  arrange(desc(F2M)) %>% 
+  head(10) %>%
+  ungroup()
+
+# plot
+p.1 = ggplot(data = fm.r,
+       aes(x = reorder(Country, F2M),
+           y = F2M)) +
+  geom_bar(stat = "identity", 
+           width = 0.5, 
+           fill = "#9632B8FF",
+           alpha = 0.8) +
+  geom_label(aes(label = paste0(format(F2M*100, digit = 2), "%")),
+             size = 4,
+             color = "#9632B8FF",
+             hjust = "inward") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  coord_flip() +
+  theme +
+  labs(title = "Better F2M",
+       x = NULL,
+       y = "Female to Male Ratio")
+
+# data
+fm.r = data %>%
+  filter(!is.na(Country)) %>% 
+  filter(Gender == "Male" | Gender == "Female") %>% 
+  group_by(Country, Gender) %>% 
+  summarise(Count = n()) %>% 
+  spread(Gender, Count) %>% 
+  mutate(F2M = Female/Male,
+         N = Female + Male) %>% 
+  filter(N > 100) %>%
+  arrange(F2M) %>% 
+  head(10) %>%
+  ungroup()
+
+# plot
+p.2 = ggplot(data = fm.r,
+       aes(x = reorder(Country, -F2M),
+           y = F2M)) +
+  geom_bar(stat = "identity", 
+           width = 0.5, 
+           fill = "#9632B8FF",
+           alpha = 0.8) +
+  geom_label(aes(label = paste0(format(F2M*100, digit = 2), "%")),
+             size = 4,
+             color = "#9632B8FF",
+             hjust = "inward") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  coord_flip() +
+  theme +
+  labs(title = "Worse F2M",
+       x = NULL,
+       y = "Female to Male Ratio")
+
+# plot
+ggarrange(p.1, p.2, nrow = 1)
+```
+
 ## Major
 
 ### Undergrad Majors with NAs
@@ -277,7 +354,7 @@ ggplot(data = major.withoutna,
 
 ### Member VS Participation by Undergrad Major
 
-- People studying natural science are amongst the group that participates the most in Stackoverflow
+- People studying natural science are amongst the group that participates the most in Stack Overflow
 - People who study computer science feel that they belong more to the community, also the biggest group in this community
 
 ```{r, fig.width = 8, fig.height = 5}
@@ -287,7 +364,6 @@ temp = c("Multiple times per day",
          "A few times per week",
          "A few times per month or weekly")
 under.grad = data %>%
-  select(UndergradMajor, StackOverflowParticipate, StackOverflowConsiderMember) %>%   
   filter(!is.na(UndergradMajor)) %>% 
   group_by(UndergradMajor) %>%
   summarise(Part = mean(StackOverflowParticipate %in% temp,
@@ -322,7 +398,7 @@ ggplot(data = under.grad,
 
 ## Gender
 
-### Salary by Gender
+### Salary by Gender in General
 
 - Males tend to have a higher presence compared to female
 - Both salary structures are the same in males and females, but males tend to have a higher ceiling
@@ -358,6 +434,79 @@ ggplot(data = box.gender,
   labs(title = "Salary by Gender",
        x = NULL,
        y = "Salary")
+```
+
+### Average Salary by Gender in Countries
+
+- Male gets more paid in most of the countries
+- Female gets only significant more paid in Cyprus
+
+```{r, fig.width = 8, fig.height = 8}
+# data
+sal.gender = data %>%
+  filter(Gender == "Male" | Gender == "Female") %>% 
+  filter(!is.na(ConvertedSalary)) %>% 
+  group_by(Gender, Country) %>% 
+  summarise(MS = mean(ConvertedSalary)) %>% 
+  filter(MS > quantile(MS, 0.75)) %>%
+  ungroup()
+
+# plot
+ggplot(data = sal.gender,
+       aes(x = Gender,
+           y = Country,
+           size = MS)) +
+  geom_point(aes(color = Gender)) +
+  scale_color_locuszoom() +
+  theme +
+  labs(title = "Salary by Gender",
+       x = NULL,
+       y = NULL)  
+```
+
+### Salary Distribution by Gender in Countries
+
+- As for medium-level respondents, which count from 100 to 500, we can see that the salary range is getting bigger and lower
+
+```{r, fig.width = 8, fig.height = 8}
+# data
+con.sal.gen = data %>%
+  filter(Employment == "Employed full-time") %>% 
+  filter(Gender %in% c("Male", "Female")) %>% 
+  filter(!is.na(Country)) %>% 
+  group_by(Country) %>% 
+  mutate(Count = n()) %>% 
+  filter(Count > 100 & Count < 500) %>% 
+  summarise(m.sal = median(ConvertedSalary, na.rm = T)) %>% 
+  arrange(desc(m.sal)) %>% 
+  select(Country) %>%
+  mutate(Country = factor(Country)) %>% 
+  ungroup()
+
+dist.sal.gen = data %>%
+  filter(Employment == "Employed full-time") %>% 
+  filter(Gender %in% c("Male", "Female")) %>%  
+  filter(!is.na(Country)) %>% 
+  group_by(Country) %>% 
+  mutate(Count = n()) %>% 
+  filter(Count > 100 & Count < 500) %>% 
+  ungroup()
+
+# plot
+options(scipen = 999)
+ggplot(data = dist.sal.gen) +
+  geom_boxplot(aes(x = Country,
+                   y = ConvertedSalary,
+                   fill = Gender)) +
+  scale_x_discrete(limits = con.sal.gen$Country) +
+  scale_y_log10() +
+  coord_flip() +
+  scale_fill_locuszoom() +  
+  theme +
+  theme(legend.position = "right") +
+  labs(title = "Salary Distribution by Gender in Countries",
+       x = NULL,
+       y = "Log Converted Salary")
 ```
 
 ### Formal Education by Gender
@@ -568,7 +717,7 @@ pyramid.plot(male$Percent,
 
 ### Top Current Languages by Gender in Wordcloud
 
-This is part of the **male** section.
+- This is part of the **male** section
 
 ```{r}
 wc.m = cur.lang %>% 
@@ -580,7 +729,7 @@ saveWidget(wc.m, "m.html", selfcontained = F)
 webshot("m.html", "m.png", vwidth = 700, vheight = 500, delay = 5)
 ```
 
-This is part of the **female** section.
+- This is part of the **female** section
 
 ```{r}
 wc.f = cur.lang %>% 
@@ -590,34 +739,6 @@ wc.f = cur.lang %>%
   wordcloud2(size = 0.5)
 saveWidget(wc.f, "f.html", selfcontained = F)
 webshot("f.html", "f.png", vwidth = 700, vheight = 500, delay = 5)
-```
-
-### Salary by Gender
-
-- Male gets more paid in most of the countries
-- Female gets only significant more paid in Cyprus
-
-```{r, fig.width = 8, fig.height = 8}
-# data
-sal.gender = data %>%
-  filter(Gender == "Male" | Gender == "Female") %>% 
-  filter(!is.na(ConvertedSalary)) %>% 
-  group_by(Gender, Country) %>% 
-  summarise(MS = mean(ConvertedSalary)) %>% 
-  filter(MS > quantile(MS, 0.75)) %>%
-  ungroup()
-
-# plot
-ggplot(data = sal.gender,
-       aes(x = Gender,
-           y = Country,
-           size = MS)) +
-  geom_point(aes(color = Gender)) +
-  scale_color_locuszoom() +
-  theme +
-  labs(title = "Salary by Gender",
-       x = NULL,
-       y = NULL)  
 ```
 
 ## Language
