@@ -35,7 +35,8 @@ pacman::p_load(tidyverse, skimr, GGally, plotly, viridis, caret,
                rpart.plot, corrgram, lightgbm, ggplot2, highcharter, 
                ggthemes, psych, scales, treemap, treemapify, repr,
                cowplot, magrittr, ggpubr, RColorBrewer, plotrix, 
-               ggrepel, ggsci, gghalves, robustHD)
+               ggrepel, ggsci, gghalves, robustHD, wordcloud2,
+               htmlwidgets, webshot)
 ```
 
 ```{r, echo = F, fig.width = 8, fig.height = 5}
@@ -78,8 +79,8 @@ top.countries = data %>%
   group_by(Country) %>% 
   summarise(Number = n()) %>%
   mutate(Perc = Number/sum(Number)) %>%
-  top_n(20, wt = Number) %>% 
-  ungroup()
+  ungroup() %>% 
+  top_n(20, wt = Number)
 
 # plot
 ggplot(data = top.countries, 
@@ -565,6 +566,32 @@ pyramid.plot(male$Percent,
              rxcol = ffunc(nrow(female)))
 ```
 
+### Top Current Languages by Gender in Wordcloud
+
+This is part of the **male** section.
+
+```{r}
+wc.m = cur.lang %>% 
+  filter(Gender == "Male") %>% 
+  filter(Count > quantile(Count, 0.5)) %>% 
+  select(LanguageWorkedWith, Count) %>% 
+  wordcloud2(size = 0.5)
+saveWidget(wc.m, "m.html", selfcontained = F)
+webshot("m.html", "m.png", vwidth = 700, vheight = 500, delay = 5)
+```
+
+This is part of the **female** section.
+
+```{r}
+wc.f = cur.lang %>% 
+  filter(Gender == "Female") %>% 
+  filter(Count > quantile(Count, 0.5)) %>% 
+  select(LanguageWorkedWith, Count) %>% 
+  wordcloud2(size = 0.5)
+saveWidget(wc.f, "f.html", selfcontained = F)
+webshot("f.html", "f.png", vwidth = 700, vheight = 500, delay = 5)
+```
+
 ### Salary by Gender
 
 - Male gets more paid in most of the countries
@@ -717,7 +744,7 @@ ggplot(data = sal.race,
 
 ## Company
 
-### Company Size
+### Company Size for Respondents
 
 - Medium size companies have the most respondents due to having needs and requiring DIY help, which is almost half of them
 - Large size companies might have their own departments to solve the problem
@@ -750,12 +777,45 @@ ggplot(data = comp.size,
        y = "Count")
 ```
 
+## AI
+
+### Top Countries Perceptions to Artificial Intelligence
+
+- All top countries except India have a similar idea which is algorithms making important decisions is a worry
+- Interesting point is US and India perceptions as the exact opposite
+
+```{r, fig.width = 8, fig.height = 8}
+# data
+con.aid = data %>%
+  filter(!is.na(AIDangerous)) %>% 
+  group_by(Country, AIDangerous) %>% 
+  summarise(Count = n()) %>% 
+  ungroup() %>% 
+  top_n(20, wt = Count)
+
+# plot
+ggplot(data = con.aid,
+       aes(x = reorder(AIDangerous, -Count),
+           y = Count,
+           fill = Country)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~Country, scales = "free_x") +
+  coord_flip() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 35)) +
+  scale_fill_locuszoom() +
+  theme +
+  labs(title = "Top Countries Perceptions to Artificial Intelligence",
+       x = "AI Dangerous",
+       y = "Count")
+  
+```
+
 # Conclusion
 
-...
+This analysis can help to play with the dataset as a survey in the future. The idea is to set the goal as 1st dimensions, such as by 1st factor. Then, adding up 2nd or 3rd factors to pile up and dice up the plot. We can either know the question after plotting or ask the question before plotting. By processing this with different factors, we will be able to explore data analysis. As for survey analysis, it does not need statistical or mathematical analysis. It just needs the easy plots by setting up factors for bringing up insights which some are predictable and some are novel.
 
 # Reference
 
-1. [Title / 2017 / Name](https://)
-2. [Title / 2021 / Name](https://)
+1. [Developer Survey / 2018 / Stack Overflow](https://t.ly/LOyz)
+2. [Survey Analysis / 2018 / Janio Martinez Bachmann](https://t.ly/73jg)
 3. [GGSCI / 2020 / SCI666](https://t.ly/Aonv)
