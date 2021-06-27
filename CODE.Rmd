@@ -928,7 +928,6 @@ ggplot(data = con.aid,
   labs(title = "Top Countries Perceptions to Artificial Intelligence",
        x = "AI Dangerous",
        y = "Count")
-  
 ```
 
 # Conclusion
